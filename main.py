@@ -1,5 +1,3 @@
-from sys import float_repr_style
-
 from dotenv import load_dotenv
 import os
 import requests
@@ -16,15 +14,15 @@ NEWS_ENDPOINT = "https://newsapi.org/v2/everything"
 NEWS_API_KEY = os.environ.get("NEWS_API_KEY")
 
 
-parameters = {
+stock_parameters = {
     "function": "TIME_SERIES_DAILY",
     "symbol": STOCK_NAME,
     "apikey": STOCK_API_KEY,
 }
 
-response = requests.get(STOCK_ENDPOINT, params=parameters)
-response.raise_for_status()
-data = response.json()["Time Series (Daily)"]
+stock_response = requests.get(STOCK_ENDPOINT, params=stock_parameters)
+stock_response.raise_for_status()
+data = stock_response.json()["Time Series (Daily)"]
 
 data_list = [value for (key, value) in data.items()]
 
@@ -38,7 +36,18 @@ difference = abs(yesterday_closing_stock_price - day_before_yesterday_closing_st
 diff_percent = (difference / day_before_yesterday_closing_stock_price) * 100
 
 if diff_percent > 5:
-    print("Get News!")
+    print("Get News")
+
+    news_parameters = {
+        "q": COMPANY_NAME,
+        "apikey": NEWS_API_KEY
+    }
+
+    news_response = requests.get(NEWS_ENDPOINT, params=news_parameters)
+    news_response.raise_for_status()
+    news_data = news_response.json()["articles"]
+    first_three_news_data = news_data[:3]
+    formatted_articles = [f"Headline: {item['title']}. \nBrief: {item['description']}" for item in first_three_news_data]
 
 
 

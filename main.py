@@ -1,11 +1,17 @@
 from dotenv import load_dotenv
 import os
 import requests
+from twilio.rest import Client
 
 load_dotenv()
 
 STOCK_NAME = "TSLA"
 COMPANY_NAME = "Tesla Inc"
+
+TWILIO_ACC_SID = os.environ.get("TWILIO_SID", "")
+TWILIO_AUTH_TOKEN  = os.environ.get("TWILIO_AUTH_TOKEN", "")
+TWILIO_PHONE = os.environ.get("TWILIO_PHONE", "")
+MY_PHONE = os.environ.get("MY_PHONE", "")
 
 STOCK_ENDPOINT = "https://www.alphavantage.co/query"
 STOCK_API_KEY = os.environ.get("STOCK_API_KEY")
@@ -36,8 +42,6 @@ difference = abs(yesterday_closing_stock_price - day_before_yesterday_closing_st
 diff_percent = (difference / day_before_yesterday_closing_stock_price) * 100
 
 if diff_percent > 5:
-    print("Get News")
-
     news_parameters = {
         "q": COMPANY_NAME,
         "apikey": NEWS_API_KEY
@@ -47,11 +51,25 @@ if diff_percent > 5:
     news_response.raise_for_status()
     news_data = news_response.json()["articles"]
     first_three_news_data = news_data[:3]
-    formatted_articles = [f"Headline: {item['title']}. \nBrief: {item['description']}" for item in first_three_news_data]
 
+    up_down = ""
+    if yesterday_closing_stock_price > day_before_yesterday_closing_stock_price:
+        up_down = "🔺"
+    else:
+        up_down = "🔻"
 
+    formatted_articles = [f"{STOCK_NAME}: {up_down}{diff_percent}%\nHeadline: {item['title']}. \nBrief: {item['description']}" for item in first_three_news_data]
 
+    client = Client(TWILIO_ACC_SID, TWILIO_AUTH_TOKEN)
 
+    for article in formatted_articles:
+        print(f"Sending: {article}")
+        message = client.messages.create(
+            to=MY_PHONE,
+            from_=TWILIO_PHONE,
+            body=article
+        )
+    print("Message sent successfully!!!!!!!!")
 
 
 
